@@ -186,7 +186,6 @@ def compare_queries(
     results = []
     for es_size in es_sizes:
         full_url = make_full_url(ELASTICSEARCH_HOST_URL, index)
-        es_from = es_size * 2
         x = 1
 
         for query_val in query_strings:
