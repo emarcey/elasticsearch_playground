@@ -299,29 +299,14 @@ def make_unnested_search_term_maker_with_sorts(sorts):
 
 def main():
     num_iterations = 5
-    max_pages = 5
     num_search_terms = 5
-    es_sizes = [1, 2, 5]  # , 25, 50]
-    max_orgs = 10000
+    es_sizes = [1, 2, 5]
 
-    # org_last_funding_date_sorter = make_unnested_search_term_maker("org_last_funding_date")
-    # org_last_funding_date_round_hour_sorter = make_unnested_search_term_maker("org_last_funding_date_round_hour")
     org_last_funding_date_round_day_sorter = make_unnested_search_term_maker("org_last_funding_date_round_day")
-    # org_last_funding_date_round_month_sorter = make_unnested_search_term_maker("org_last_funding_date_round_month")
-    # org_last_funding_date_round_year_sorter = make_unnested_search_term_maker("org_last_funding_date_round_year")
-    # org_last_funding_date_keyword_sorter = make_unnested_search_term_maker("org_last_funding_date_keyword")
-    # org_last_funding_date_round_hour_keyword_sorter = make_unnested_search_term_maker(
-    #     "org_last_funding_date_round_hour_keyword"
-    # )
+
     org_last_funding_date_round_day_keyword_sorter = make_unnested_search_term_maker(
         "org_last_funding_date_round_day_keyword"
     )
-    # org_last_funding_date_round_month_keyword_sorter = make_unnested_search_term_maker(
-    #     "org_last_funding_date_round_month_keyword"
-    # )
-    # org_last_funding_date_round_year_keyword_sorter = make_unnested_search_term_maker(
-    #     "org_last_funding_date_round_year_keyword"
-    # )
 
     day_sorts = [
         {"org_last_funding_date_round_year_int": {"order": "desc"}},
@@ -344,10 +329,10 @@ def main():
             query_type="OrgLastFundingDate Round Day List of Ints Sort",
             query_maker=org_last_funding_date_day_list_of_ints_sorter,
         ),
-        # Query(
-        #     query_type="OrgLastFundingDate Round Day Composite Int Sort",
-        #     query_maker=org_last_funding_date_round_day_composite_int_sorter,
-        # ),
+        Query(
+            query_type="OrgLastFundingDate Round Day Composite Int Sort",
+            query_maker=org_last_funding_date_round_day_composite_int_sorter,
+        ),
     ]
 
     query_params = QueryParams(
@@ -361,32 +346,6 @@ def main():
     )
 
     compare_queries(queries, SEARCH_TERMS[:num_search_terms], query_params)
-
-    # compare_queries(
-    #     "OrgLastFundingDate Round Day Sort",
-    #     org_last_funding_date_round_day_sorter,
-    #     "OrgLastFundingDate Round Day List Of Ints Sort",
-    #     org_last_funding_date_day_list_of_ints_sorter,
-    #     SEARCH_TERMS[:num_search_terms],
-    #     0,
-    #     es_sizes,
-    #     num_iterations,
-    #     index,
-    #     "round_day_date_vs_list_of_ints",
-    # )
-
-    # compare_queries(
-    #     "OrgLastFundingDate Round Day Keyword Sort",
-    #     org_last_funding_date_round_day_keyword_sorter,
-    #     "OrgLastFundingDate Round Day List Of Ints Sort",
-    #     org_last_funding_date_day_list_of_ints_sorter,
-    #     SEARCH_TERMS[:num_search_terms],
-    #     0,
-    #     es_sizes,
-    #     num_iterations,
-    #     index,
-    #     "round_day_date_vs_list_of_ints",
-    # )
 
 
 if __name__ == "__main__":

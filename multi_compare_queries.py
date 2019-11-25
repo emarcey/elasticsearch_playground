@@ -33,6 +33,12 @@ def compare_queries(
     queries: List[Query], query_vals: List[str], query_params: QueryParams, file_descrip="query_comparison"
 ):
 
+    if not queries:
+        raise ValueError("No queries received.")
+
+    if not query_vals:
+        raise ValueError("No query_vals received.")
+
     filename = make_filename(TABLES_DIR, file_descrip, "md")
     with open(filename, "w") as f:
         f.write(f"# Comparing Queries{DOUBLE_LINE}")
@@ -42,9 +48,18 @@ def compare_queries(
             )
         )
         f.write(DOUBLE_LINE)
+        f.write("## Conclusion")
+        f.write(DOUBLE_LINE)
+        f.write("[Add decision here]")
+        f.write(DOUBLE_LINE)
 
     results = []
     for query, query_val, es_size in product(queries, query_vals, query_params.es_sizes):
+        print(f"*" * 10)
+        print(f"Query: {query.query_type}")
+        print(f"Query Val: {query_val}")
+        print(f"Size: {es_size}")
+        print(f"*" * 10)
 
         query_body = query.query_maker(query_val, query_params.es_from, es_size)
 

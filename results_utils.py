@@ -1,6 +1,6 @@
 from collections import defaultdict
-from itertools import product
-from typing import Any, Dict, List
+from itertools import combinations
+from typing import Any, Dict, List, Tuple, Union
 from statistics import median
 from numpy import percentile
 
@@ -63,14 +63,18 @@ def make_table_header(columns: List[str]) -> List[str]:
     return ["|".join(columns), "|".join(dashes)]
 
 
-def make_individual_results_row(row: Dict[str, Any]) -> List[str]:
-    query_avg = round(sum(row["query_times"]) / len(row["query_times"]), 5)
-    query_median = round(median(row["query_times"]), 5)
-    query_max = round(percentile(row["query_times"], 95), 5)
+def get_avg_median_95th(times: List[float]) -> Tuple[Union[str, float], Union[str, float], Union[str, float]]:
+    num_times = len(times)
+    if num_times == 0:
+        return "N/A", "N/A", "N/A"
+    return num_times, round(sum(times) / num_times, 5), round(median(times), 5), round(percentile(times, 95), 5)
 
+
+def make_individual_results_row(row: Dict[str, Any]) -> List[str]:
+    num_times, query_avg, query_median, query_max = get_avg_median_95th(row["query_times"])
     calculations = [
         f"{row['num_hits']}",
-        f"{len(row['query_times'])}",
+        f"{num_times}",
         f"{query_avg}",
         f"{query_median}",
         f"{query_max}",
@@ -121,12 +125,16 @@ def make_individual_results_md(results: List[BenchmarkResults], start_header_lev
 
 
 def make_comparative_results_row(row: Dict[str, Any]) -> List[str]:
-    query1_avg = round(sum(row["query1_times"]) / len(row["query1_times"]), 5)
-    query1_median = round(median(row["query1_times"]), 5)
-    query1_max = round(percentile(row["query1_times"], 95), 5)
-    query2_avg = round(sum(row["query2_times"]) / len(row["query2_times"]), 5)
-    query2_median = round(median(row["query2_times"]), 5)
-    query2_max = round(percentile(row["query2_times"], 95), 5)
+    query_1_num_times, query1_avg, query1_median, query1_max = get_avg_median_95th(row["query1_times"])
+    query_2_num_times, query2_avg, query2_median, query2_max = get_avg_median_95th(row["query2_times"])
+
+    avg_differ = "N/A"
+    median_differ = "N/A"
+    max_differ = "N/A"
+    if query_1_num_times > 0 and query_2_num_times > 0:
+        avg_differ = make_differ_with_emphasis(query1_avg, query2_avg)
+        median_differ = make_differ_with_emphasis(query1_median, query2_median)
+        max_differ = make_differ_with_emphasis(query1_max, query2_max)
 
     calculations = [
         f"{row['num_hits']}",
@@ -134,13 +142,13 @@ def make_comparative_results_row(row: Dict[str, Any]) -> List[str]:
         f"{len(row['query2_times'])}",
         f"{query1_avg}",
         f"{query2_avg}",
-        f"{make_differ_with_emphasis(query1_avg, query2_avg)}",
+        f"{avg_differ}",
         f"{query1_median}",
         f"{query2_median}",
-        f"{make_differ_with_emphasis(query1_median, query2_median)}",
+        f"{median_differ}",
         f"{query1_max}",
         f"{query2_max}",
-        f"{make_differ_with_emphasis(query1_max, query2_max)}",
+        f"{max_differ}",
     ]
     return "|".join(calculations)
 
@@ -197,7 +205,8 @@ def make_comparative_results_md(results: List[BenchmarkResults], start_header_le
         results_map[result.query_type].append(result)
 
     table_header = "#" * (start_header_level + 1)
-    for query_1, query_2 in product(results_map.values(), results_map.values()):
+    comparisons_seen = set()
+    for query_1, query_2 in combinations(results_map.values(), 2):
         query_1_type = query_1[0].query_type
         query_2_type = query_2[0].query_type
         if query_1_type == query_2_type:
