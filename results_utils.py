@@ -128,9 +128,8 @@ def make_individual_results_md(results: List[BenchmarkResults], start_header_lev
 
     table_header = "#" * (start_header_level + 1)
     for query_type, type_results in result_map.items():
-        if index_override:
-            md_rows.append(f"Index Override: {type_results.index_override}")
-            md_rows.append(DOUBLE_LINE)
+        if type_results[0].index_override:
+            md_rows.append(f"Index Override: {type_results[0].index_override}")
         md_rows.append(f"{table_header} {query_type}")
         md_rows.extend(make_individual_results_table(query_type, type_results))
         md_rows.append("\n")
