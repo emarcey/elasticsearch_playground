@@ -1,5 +1,5 @@
-ENV = "prd"
-ELASTICSEARCH_HOST_URL = f"http://elasticsearch-{ENV}.cbinsights.com:9200"
+ENV = ""
+ELASTICSEARCH_HOST_URL = f""
 HEADER = {"Content-Type": "application/json"}
 URL_PARAMS = {"request_cache": "false"}
 
