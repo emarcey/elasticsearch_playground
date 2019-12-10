@@ -1,7 +1,7 @@
 from json import dumps
 from requests import post
 import time
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 from itertools import product
 
 from request_utils import clear_cache, make_full_url
@@ -11,8 +11,10 @@ from data_classes import Query, QueryParams, BenchmarkResults
 from const import ENV, TABLES_DIR, DOUBLE_LINE
 
 
-def run_query_iterations(request_body: Dict[str, Any], query_params: QueryParams) -> Tuple[List[int], List[Any]]:
-    full_url = make_full_url(query_params.base_url, query_params.index)
+def run_query_iterations(
+    request_body: Dict[str, Any], query_params: QueryParams, index_override: Optional[str] = None
+) -> Tuple[List[int], List[Any]]:
+    full_url = make_full_url(query_params.base_url, index_override or query_params.index)
     query_times: List[int] = []
     query_hits: List[Any] = []
     for i in range(query_params.num_iterations):
@@ -44,7 +46,12 @@ def compare_queries(
         f.write(f"# Comparing Queries{DOUBLE_LINE}")
         f.write(
             make_setup_print(
-                ENV, query_params.index, query_params.es_from, query_params.es_sizes, query_params.num_iterations
+                ENV,
+                query_params.index,
+                query_params.es_from,
+                query_params.es_sizes,
+                query_params.num_iterations,
+                index_overrides=[q.index_override for q in queries],
             )
         )
         f.write(DOUBLE_LINE)

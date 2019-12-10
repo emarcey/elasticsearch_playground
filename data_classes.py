@@ -1,11 +1,12 @@
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 
 @dataclass
 class Query:
     query_type: str
     query_maker: callable
+    index_override: Optional[str] = None
 
 
 @dataclass

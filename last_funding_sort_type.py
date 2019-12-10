@@ -4,7 +4,7 @@ from data_classes import Query, QueryParams
 
 from const import HEADER, URL_PARAMS
 
-index = ""
+index = "indexa"
 
 
 def make_unnested_search_term_maker(sort_field: str):
@@ -320,10 +320,15 @@ def main():
     )
 
     queries = [
-        Query(query_type="OrgLastFundingDate Round Day Sort", query_maker=org_last_funding_date_round_day_sorter),
+        Query(
+            query_type="OrgLastFundingDate Round Day Sort",
+            query_maker=org_last_funding_date_round_day_sorter,
+            index_override="indexb",
+        ),
         Query(
             query_type="OrgLastFundingDate Round Day Keyword Sort",
             query_maker=org_last_funding_date_round_day_keyword_sorter,
+            index_override="indexb",
         ),
         Query(
             query_type="OrgLastFundingDate Round Day List of Ints Sort",

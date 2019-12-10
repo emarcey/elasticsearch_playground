@@ -1,6 +1,6 @@
 from collections import defaultdict
 from itertools import combinations
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 from statistics import median
 from numpy import percentile
 
@@ -8,13 +8,35 @@ from const import DOUBLE_LINE
 from data_classes import BenchmarkResults
 
 
+def make_setup_index_print(index: str, index_overrides: Optional[List[Optional[str]]] = None) -> str:
+    index_line = f"* __Index__: {index}"
+    if not index_overrides:
+        return f"* __Index__: {index}"
+
+    indexes_used: List[str] = []
+    for index_override in index_overrides:
+        index_used = index
+        if index_override is not None:
+            index_used = index_override
+        indexes_used.append(index_used)
+    return f"* __Index__: {', '.join(indexes_used)}"
+
+
 def make_setup_print(
-    env: str, index: str, es_from, es_size: int, num_iterations: int, num_clauses: int = 0, queries=[], fields=[]
+    env: str,
+    index: str,
+    es_from,
+    es_size: int,
+    num_iterations: int,
+    num_clauses: int = 0,
+    queries: Optional[List[str]] = None,
+    fields: Optional[List[str]] = None,
+    index_overrides: Optional[List[Optional[str]]] = None,
 ):
     lines = [
         "## Testing Parameters",
         f"* __Env__: {env}",
-        f"* __Index__: {index}",
+        make_setup_index_print(index, index_overrides),
         f"* __Number of Iterations__: {num_iterations}",
     ]
 
