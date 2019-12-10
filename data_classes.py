@@ -27,3 +27,4 @@ class BenchmarkResults:
     query_type: str
     query_times: List[int]
     query_hits: List[Any]
+    index_override: Optional[str] = None

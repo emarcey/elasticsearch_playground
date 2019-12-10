@@ -27,7 +27,7 @@ def run_query_iterations(
             raise ValueError(f"Bad response: {query_resp.json()}")
 
         query_hits = query_resp.json().get("hits", {}).get("hits", [])
-        query_times.append(end_time - start_time)
+        query_times.append((end_time - start_time) * 1000)
     return query_times, query_hits
 
 
@@ -46,12 +46,7 @@ def compare_queries(
         f.write(f"# Comparing Queries{DOUBLE_LINE}")
         f.write(
             make_setup_print(
-                ENV,
-                query_params.index,
-                query_params.es_from,
-                query_params.es_sizes,
-                query_params.num_iterations,
-                index_overrides=[q.index_override for q in queries],
+                ENV, query_params.index, query_params.es_from, query_params.es_sizes, query_params.num_iterations,
             )
         )
         f.write(DOUBLE_LINE)
@@ -79,6 +74,7 @@ def compare_queries(
                 query_type=query.query_type,
                 query_times=query_times,
                 query_hits=query_hits,
+                index_override=query.index_override,
             )
         )
 

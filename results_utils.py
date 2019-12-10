@@ -8,20 +8,6 @@ from const import DOUBLE_LINE
 from data_classes import BenchmarkResults
 
 
-def make_setup_index_print(index: str, index_overrides: Optional[List[Optional[str]]] = None) -> str:
-    index_line = f"* __Index__: {index}"
-    if not index_overrides:
-        return f"* __Index__: {index}"
-
-    indexes_used: List[str] = []
-    for index_override in index_overrides:
-        index_used = index
-        if index_override is not None:
-            index_used = index_override
-        indexes_used.append(index_used)
-    return f"* __Index__: {', '.join(indexes_used)}"
-
-
 def make_setup_print(
     env: str,
     index: str,
@@ -31,14 +17,18 @@ def make_setup_print(
     num_clauses: int = 0,
     queries: Optional[List[str]] = None,
     fields: Optional[List[str]] = None,
-    index_overrides: Optional[List[Optional[str]]] = None,
 ):
     lines = [
         "## Testing Parameters",
         f"* __Env__: {env}",
-        make_setup_index_print(index, index_overrides),
-        f"* __Number of Iterations__: {num_iterations}",
     ]
+
+    if index:
+        lines.append(f"* __Index__: {index}")
+    else:
+        lines.append(f"* __Index__: Override used by all queries")
+
+    lines.append(f"* __Number of Iterations__: {num_iterations}")
 
     if isinstance(es_from, int):
         lines.append(f"* __From__: {es_from}")
@@ -138,7 +128,9 @@ def make_individual_results_md(results: List[BenchmarkResults], start_header_lev
 
     table_header = "#" * (start_header_level + 1)
     for query_type, type_results in result_map.items():
-
+        if index_override:
+            md_rows.append(f"Index Override: {type_results.index_override}")
+            md_rows.append(DOUBLE_LINE)
         md_rows.append(f"{table_header} {query_type}")
         md_rows.extend(make_individual_results_table(query_type, type_results))
         md_rows.append("\n")
