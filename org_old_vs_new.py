@@ -303,9 +303,9 @@ def make_old_query(query_val: str, es_from: int, es_size: int):
 
 
 def main():
-    num_iterations = 10
-    # num_search_terms = 25
-    es_sizes = [10, 25, 50, 100]
+    num_iterations = 25
+    num_search_terms = 25
+    es_sizes = [10, 25, 50]  # , 100]
 
     queries = [
         Query(query_type="Old Query", query_maker=make_old_query, index_override="org-12"),
@@ -322,7 +322,7 @@ def main():
         header=HEADER,
     )
 
-    compare_queries(queries, TERRY_TERMS, query_params, file_descrip="old_vs_new")
+    compare_queries(queries, TERRY_TERMS[:num_search_terms], query_params, file_descrip="old_vs_new")
 
 
 if __name__ == "__main__":

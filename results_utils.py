@@ -78,7 +78,7 @@ def make_table_header(columns: List[str]) -> List[str]:
 def get_avg_median_95th(times: List[float]) -> Tuple[Union[str, float], Union[str, float], Union[str, float]]:
     num_times = len(times)
     if num_times == 0:
-        return "N/A", "N/A", "N/A"
+        return 0, "N/A", "N/A", "N/A"
     return num_times, round(sum(times) / num_times, 5), round(median(times), 5), round(percentile(times, 95), 5)
 
 
