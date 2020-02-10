@@ -190,6 +190,7 @@ def main():
     wb = Workbook()
     i = 1
     for query_builder, description in query_builders:
+        print(f"Running query {description}")
         es_responses = run_search_terms(query_builder, search_terms)
         es_results = process_iss_results(es_responses)
         example_query = dumps(query_builder("searchTerm", 0, 25))
