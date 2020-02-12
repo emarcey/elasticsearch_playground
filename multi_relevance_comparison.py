@@ -1,5 +1,5 @@
 from openpyxl import Workbook
-from const import ELASTICSEARCH_HOST_URL, HEADER, TERRY_TERMS
+from const import ELASTICSEARCH_HOST_URL, HEADER, TERRY_TERMS, IU_QUALITY_MAPPING, SAFE_WORDS, IU_REVIEWED_TERMS
 from json import dumps
 from requests import post
 from datetime import datetime
@@ -10,19 +10,27 @@ from relevance_experiments_tiered_news import *
 from collections import defaultdict
 
 
-def write_results(wb, iss_response, example_query, query_description, sheet_number):
-    ws = wb.create_sheet()
+def write_results(ws, iss_response, example_query, query_description, sheet_number):
+    ws.column_dimensions["A"].width = 20
+    ws.column_dimensions["C"].width = 20
     ws.append(["Query Description:", query_description])
     ws.append(["Query JSON:", example_query])
+    ws.append([])
     ws.append(
         [
             "search term",
             "ranking",
-            "score",
             "Company Name",
+            "IU Qality",
+            "description",
+            "score",
+            "description_score",
+            "news_score",
+            "cxn_name_score",
+            "funding_multiplier",
+            "num_cxn_multiplier",
             "URL",
             "id_cbi_entity",
-            "description",
             "profile views",
             "mosaic_overall",
             "last funding date",
@@ -32,6 +40,7 @@ def write_results(wb, iss_response, example_query, query_description, sheet_numb
             "org_num_deals",
             "number of investors",
             "expert collections",
+            "number of expert collections",
         ]
     )
     ws.title = f"Query {sheet_number}"
@@ -55,6 +64,22 @@ def write_results(wb, iss_response, example_query, query_description, sheet_numb
                 ws.append(new_row)
 
 
+def write_summary(ws, query_summaries):
+    ws.append(
+        [
+            "Query Number",
+            "Number of Good Included",
+            "Number of Good Missed",
+            "Number of Bad Included",
+            "Number of Bad Excluded",
+        ]
+    )
+    for i, summary in query_summaries.items():
+        ws.append(
+            [str(i), summary["good_included"], summary["good_missed"], summary["bad_included"], summary["bad_excluded"]]
+        )
+
+
 def run_search_terms(query_builder, search_terms):
     out = {}
     for search_term in search_terms:
@@ -68,19 +93,44 @@ def run_search_terms(query_builder, search_terms):
 def process_iss_results(search_term_to_results):
     out = defaultdict(list)
     # print("search_term_to_results", search_term_to_results)
+    good_included = 0
+    bad_included = 0
+    all_good = 0
+    all_bad = 0
     for search_term, results in search_term_to_results.items():
         id_row = 1
+        hit_quality = IU_QUALITY_MAPPING.get(search_term, {})
+        all_good += len([k for k, v in IU_QUALITY_MAPPING.get(search_term, {}).items() if v == "good"])
+        all_bad += len([k for k, v in IU_QUALITY_MAPPING.get(search_term, {}).items() if v == "bad"])
         for row in results["hits"]["hits"]:
             data = row["_source"]
+            explain = row["_explanation"]
+
+            description_score, news_score, cxn_name_score, funding_multiplier, num_cxn_multiplier = process_explain(
+                explain, 0, 0, 0, 0, 0
+            )
             score = row["_score"]
-            row = [
+            org_name = data.get("org_name", "")
+            quality = hit_quality.get(org_name)
+            collections = data.get("expert_collection_names", [])
+            if quality == "good":
+                good_included += 1
+            elif quality == "bad":
+                bad_included += 1
+            excel_row = [
                 search_term,
                 id_row,
+                org_name,
+                quality,
+                data.get("org_description", ""),
                 score,
-                data.get("org_name", ""),
+                description_score,
+                news_score,
+                cxn_name_score,
+                funding_multiplier,
+                num_cxn_multiplier,
                 data.get("org_url", ""),
                 data.get("id_org", ""),
-                data.get("org_description", ""),
                 data.get("org_page_views", ""),
                 data.get("org_mosaic_overall", ""),
                 data.get("org_last_funding_funding_date", ""),
@@ -89,113 +139,239 @@ def process_iss_results(search_term_to_results):
                 data.get("org_num_fundings", ""),
                 data.get("org_num_deals", ""),
                 len(data.get("org_investor", [])),
-                str(data.get("expert_collection_names", [])),
+                str(collections),
+                len(collections),
             ]
-            out[search_term].append(row)
+            out[search_term].append(excel_row)
             id_row += 1
-    return out
+
+    good_missed = all_good - good_included
+    bad_excluded = all_bad - bad_included
+
+    summary_data = {
+        "good_included": good_included,
+        "good_missed": good_missed,
+        "bad_included": bad_included,
+        "bad_excluded": bad_excluded,
+    }
+    return out, summary_data
+
+
+def process_explain(explain, description_score, news_score, cxn_name_score, funding_multiplier, num_cxn_multiplier):
+    details = explain.get("details", [])
+    for detail in details:
+        description = detail["description"]
+        if "weight(search_term_org_description_no_exit" in description:
+            description_score = detail["value"]
+
+        # Note: this will break if you use other dis_max queries besides for news
+        elif "weight(all_org_news_noun_phrases_no_exit" in description or description == "max of:":
+            news_score = detail["value"]
+
+        elif "weight(expert_collection_names" in description or "ConstantScore(expert_collection_names" in description:
+            cxn_name_score = detail["value"]
+
+        elif "field value function" in description and "org_total_equity_funding" in description:
+            funding_multiplier = detail["value"]
+
+        elif "field value function" in description and "num_expert_collections" in description:
+            num_cxn_multiplier = detail["value"]
+
+        else:
+            description_score, news_score, cxn_name_score, funding_multiplier, num_cxn_multiplier = process_explain(
+                detail, description_score, news_score, cxn_name_score, funding_multiplier, num_cxn_multiplier
+            )
+    return description_score, news_score, cxn_name_score, funding_multiplier, num_cxn_multiplier
 
 
 def main():
     query_builders = [
-        (make_current_prd_query, "Curent prd query"),
-        (make_news_desc_tf_idf_times_equity_funding, "(News tf_idf + description tf_idf) * total equity funding"),
+        # (make_current_prd_query, "Current prd query"),
+        # (make_news_desc_tf_idf, "News tf_idf + description tf_idf"),
+        # (make_news_desc_tf_idf_times_equity_funding, "(News tf_idf + description tf_idf) * total equity funding"),
+        # (
+        #     make_news_desc_tf_idf_times_ln_equity_funding,
+        #     "(News tf_idf + description tf_idf) * ln(2 + total equity funding)",
+        # ),
+        # (
+        #     make_news_desc_tf_idf_times_sqrt_equity_funding,
+        #     "(News tf_idf + description tf_idf) * sqrt(total equity funding)",
+        # ),
+        # (
+        #     make_news_1_5_x_desc_tf_idf_times_ln_equity_funding,
+        #     "(News tf_idf + (1.5 * description tf_idf)) * ln(2 + total equity funding)",
+        # ),
+        # (
+        #     make_news_desc_expert_collection_times_ln_equity_funding,
+        #     "(News tf_idf + description tf_idf + expert collection name tf_idf) * ln(2 + total equity funding)",
+        # ),
+        # (
+        #     make_0_5_x_news_desc_expert_collection_times_ln_equity_funding,
+        #     "((0.5 * News tf_idf) + description tf_idf + expert collection name tf_idf) * ln(2 + total equity funding)",
+        # ),
+        # (
+        #     make_0_5_x_news_desc_flattened1_expert_collection_times_ln_equity_funding,
+        #     "((0.5 * News tf_idf) + description tf_idf + expert collection name flattened to 1) * ln(2 + total equity funding)",
+        # ),
+        # (
+        #     make_0_2_x_news_desc_flattened1_expert_collection_times_ln_equity_funding,
+        #     "((0.2 * News tf_idf) + description tf_idf + expert collection name flattened to 1) * ln(2 + total equity funding)",
+        # ),
+        # (
+        #     make_description_tf_idf_news_tfidf_collection_tf_idf_X_ln_equity_funding_X_ln_num_collections,
+        #     "(News tf_idf + description tf_idf + expert collection name tf_idf) * ln(2 + total equity funding) * ln(2 + number of expert collections)",
+        # ),
+        # (
+        #     make_description_tf_idf_0_5_x_news_tfidf_collection_tf_idf_X_ln_equity_funding_X_ln_num_collections,
+        #     "((0.5 * News tf_idf) + description tf_idf + expert collection name tf_idf) * ln(2 + total equity funding) * ln(2 + number of expert collections)",
+        # ),
+        # (
+        #     make_description_tf_idf_0_5_x_news_tfidf_collection_tf_idf_X_ln_equity_funding_X_log_num_collections,
+        #     "((0.5 * News tf_idf) + description tf_idf + expert collection name tf_idf) * ln(2 + total equity funding) * log10(2 + number of expert collections)",
+        # ),
+        # (
+        #     make_description_tf_idf_news_tfidf_collection_tf_idf_X_ln_equity_funding_X_log_num_collections,
+        #     "(News tf_idf + description tf_idf + expert collection name tf_idf) * ln(2 + total equity funding) * log10(2 + number of expert collections)",
+        # ),
+        # (
+        #     make_description_tf_idf_news_tfidf_collection_tf_idf_X_equity_funding_X_num_collections,
+        #     "(News tf_idf + description tf_idf + expert collection name tf_idf) * total equity funding * number of expert collections",
+        # ),
+        # (
+        #     make_description_tf_idf_news_tfidf_collection_tf_idf_X_ln_equity_funding_X_num_collections,
+        #     "(News tf_idf + description tf_idf + expert collection name tf_idf) * ln(2 + total equity funding) * number of expert collections",
+        # ),
+        # (
+        #     make_description_tf_idf_news_tfidf_collection_tf_idf_X_equity_funding_X_log_num_collections,
+        #     "(News tf_idf + description tf_idf + expert collection name tf_idf) * total equity funding * log10(2 + number of expert collections)",
+        # ),
+        # (
+        #     make_description_tf_idf_news_tfidf_collection_tf_idf_X_ln_equity_funding_X_log_num_collections,
+        #     "(News tf_idf + description tf_idf + expert collection name tf_idf) * total equity funding * number of expert collections",
+        # ),
         (
-            make_news_desc_tf_idf_times_ln_equity_funding,
-            "(News tf_idf + description tf_idf) * ln(total equity funding)",
+            make_description_tf_idf_news_tfidf_collection_tf_idf_X_ln_3x_equity_funding_X_log_num_collections,
+            "(News tf_idf + description tf_idf + expert collection name tf_idf) * ln(2 + 3 * total equity funding) * log(2 + number of expert collections)",
         ),
         (
-            make_news_desc_tf_idf_times_sqrt_equity_funding,
-            "(News tf_idf + description tf_idf) * sqrt(total equity funding)",
+            make_description_tf_idf_news_tfidf_collection_tf_idf_X_ln_3x_equity_funding,
+            "(News tf_idf + description tf_idf + expert collection name tf_idf) * ln(2 + total equity funding)",
         ),
         (
-            make_news_1_5_x_desc_tf_idf_times_ln_equity_funding,
-            "(News tf_idf + (1.5 * description tf_idf)) * ln(total equity funding)",
+            make_description_tf_idf_news_tfidf_X_ln_equity_funding,
+            "(News tf_idf + description tf_idf) * ln(2 + total equity funding)",
         ),
-        (
-            make_news_desc_expert_collection_times_ln_equity_funding,
-            "(News tf_idf + description tf_idf + expert collection name tf_idf) * ln(total equity funding)",
-        ),
-        (
-            make_0_5_x_news_desc_expert_collection_times_ln_equity_funding,
-            "((0.5 * News tf_idf) + description tf_idf + expert collection name tf_idf) * ln(total equity funding)",
-        ),
-        (
-            make_0_5_x_news_desc_flattened1_expert_collection_times_ln_equity_funding,
-            "((0.5 * News tf_idf) + description tf_idf + expert collection name flattened to 1) * ln(total equity funding)",
-        ),
-        (
-            make_0_2_x_news_desc_flattened1_expert_collection_times_ln_equity_funding,
-            "((0.2 * News tf_idf) + description tf_idf + expert collection name flattened to 1) * ln(total equity funding)",
-        ),
-        (
-            make_description_tf_idf_news_tfidf_collection_tf_idf_X_ln_equity_funding_X_ln_num_collections,
-            "(News tf_idf + description tf_idf + expert collection name tf_idf) * ln(total equity funding) * ln(number of expert collections)",
-        ),
-        (
-            make_description_tf_idf_0_5_x_news_tfidf_collection_tf_idf_X_ln_equity_funding_X_ln_num_collections,
-            "((0.5 * News tf_idf) + description tf_idf + expert collection name tf_idf) * ln(total equity funding) * ln(number of expert collections)",
-        ),
-        (
-            make_description_tf_idf_news_tfidf_flattened1_collection_X_ln_equity_funding_X_ln_num_collections,
-            "(News tf_idf + description tf_idf + expert collection name lattened to 1) * ln(total equity funding) * ln(number of expert collections)",
-        ),
-        # TIERED NEWS
-        (
-            tiered_news_make_news_desc_tf_idf_times_equity_funding,
-            "(Tiered News tf_idf + description tf_idf) * total equity funding",
-        ),
-        (
-            tiered_news_make_news_desc_tf_idf_times_ln_equity_funding,
-            "(Tiered News tf_idf + description tf_idf) * ln(total equity funding)",
-        ),
-        (
-            tiered_news_make_news_desc_tf_idf_times_sqrt_equity_funding,
-            "(Tiered News tf_idf + description tf_idf) * sqrt(total equity funding)",
-        ),
-        (
-            tiered_news_make_news_1_5_x_desc_tf_idf_times_ln_equity_funding,
-            "(Tiered News tf_idf + (1.5 * description tf_idf)) * ln(total equity funding)",
-        ),
-        (
-            tiered_news_make_news_desc_expert_collection_times_ln_equity_funding,
-            "(Tiered News tf_idf + description tf_idf + expert collection name tf_idf) * ln(total equity funding)",
-        ),
-        (
-            tiered_news_make_0_5_x_news_desc_expert_collection_times_ln_equity_funding,
-            "((0.5 * Tiered News tf_idf) + description tf_idf + expert collection name tf_idf) * ln(total equity funding)",
-        ),
-        (
-            tiered_news_make_0_5_x_news_desc_flattened1_expert_collection_times_ln_equity_funding,
-            "((0.5 * Tiered News tf_idf) + description tf_idf + expert collection name flattened to 1) * ln(total equity funding)",
-        ),
-        (
-            tiered_news_make_0_2_x_news_desc_flattened1_expert_collection_times_ln_equity_funding,
-            "((0.2 * Tiered News tf_idf) + description tf_idf + expert collection name flattened to 1) * ln(total equity funding)",
-        ),
-        (
-            tiered_news_make_description_tf_idf_news_tfidf_collection_tf_idf_X_ln_equity_funding_X_ln_num_collections,
-            "(Tiered News tf_idf + description tf_idf + expert collection name tf_idf) * ln(total equity funding) * ln(number of expert collections)",
-        ),
-        (
-            tiered_news_make_description_tf_idf_0_5_x_news_tfidf_collection_tf_idf_X_ln_equity_funding_X_ln_num_collections,
-            "((0.5 * Tiered News tf_idf) + description tf_idf + expert collection name tf_idf) * ln(total equity funding) * ln(number of expert collections)",
-        ),
-        (
-            tiered_news_make_description_tf_idf_news_tfidf_flattened1_collection_X_ln_equity_funding_X_ln_num_collections,
-            "(Tiered News tf_idf + description tf_idf + expert collection name lattened to 1) * ln(total equity funding) * ln(number of expert collections)",
-        ),
+        # (
+        #     make_description_tf_idf_news_tfidf_collection_tf_idf_X_ln_3x_equity_funding_X_log_num_collections_X_ln_num_news_articles,
+        #     "(News tf_idf + description tf_idf + expert collection name tf_idf) * ln(2 + 3 * total equity funding) * log(2 + number of expert collections) * ln(2 + number of news articles)",
+        # ),
+        # (
+        #     make_description_tf_idf_news_f_collection_flattened1_X_ln_3x_equity_funding_X_log_num_collections,
+        #     "(News flattened to 1 + description tf_idf + expert collection name flattened to 1) * ln(2 + 3 * total equity funding) * log(2 + number of expert collections)",
+        # ),
+        # (
+        #     make_description_tf_idf_news_tfidf_collection_flattened1_X_ln_3x_equity_funding_X_log_num_collections_X_ln_num_news_articles,
+        #     "(News tf_idf + description tf_idf + expert collection name flattened to 1) * ln(2 + 3 * total equity funding) * log(2 + number of expert collections) * ln(2 + number of news articles)",
+        # ),
+        # (
+        #     make_description_tf_idf_news_tfidf_collection_tf_idf_X_ln_3x_equity_funding_X_log_num_news_articles,
+        #     "(News tf_idf + description tf_idf + expert collection name tf_idf) * ln(2 + 3 * total equity funding) * log(2 + number of news articles)",
+        # ),
+        # (
+        #     make_description_tf_idf_news_tfidf_collection_tf_idf_X_ln_3x_equity_funding_X_num_collections,
+        #     "(News tf_idf + description tf_idf + expert collection name tf_idf) * ln(2 + 3 * total equity funding) * number of expert collections",
+        # ),
+        # (
+        #     make_description_tf_idf_news_tfidf_collection_tf_idf_X_ln_equity_funding,
+        #     "(News tf_idf + description tf_idf + expert collection name tf_idf) * ln(2 + 3 * total equity funding)",
+        # ),
+        # (
+        #     make_description_tf_idf_news_tfidf_collection_tf_idf_X_ln_equity_funding_plus_num_collections,
+        #     "(News tf_idf + description tf_idf + expert collection name tf_idf) * ln(2 + total equity funding) + number of expert collections",
+        # ),
+        # (
+        #     make_description_tf_idf_news_tfidf_collection_tf_idf_X_ln_equity_funding_X_log_num_collections,
+        #     "(Tiered News tf_idf + description tf_idf + expert collection name tf_idf) * ln(2 + total equity funding) * log10(2 + number of expert collections)",
+        # ),
+        # (
+        #     make_description_tf_idf_0_5_x_news_tfidf_collection_tf_idf_X_ln_equity_funding_plus_log_num_collections,
+        #     "((0.5 * News tf_idf) + description tf_idf + expert collection name tf_idf) * (ln(2 + total equity funding) + log10(2 + number of expert collections))",
+        # ),
+        # (
+        #     make_description_tf_idf_news_tfidf_collection_tf_idf_X_ln_equity_funding_plus_log_num_collections,
+        #     "(News tf_idf + description tf_idf + expert collection name tf_idf) * (ln(2 + total equity funding) + log10(2 + number of expert collections))",
+        # ),
+        # (
+        #     make_description_tf_idf_news_tfidf_flattened1_collection_X_ln_equity_funding_X_ln_num_collections,
+        #     "(News tf_idf + description tf_idf + expert collection name lattened to 1) * ln(2 + total equity funding) * ln(2 + number of expert collections)",
+        # ),
+        # # TIERED NEWS
+        # (
+        #     tiered_news_make_news_desc_tf_idf_times_equity_funding,
+        #     "(Tiered News tf_idf + description tf_idf) * total equity funding",
+        # ),
+        # (
+        #     tiered_news_make_news_desc_tf_idf_times_ln_equity_funding,
+        #     "(Tiered News tf_idf + description tf_idf) * ln(2 + total equity funding)",
+        # ),
+        # (
+        #     tiered_news_make_news_desc_tf_idf_times_sqrt_equity_funding,
+        #     "(Tiered News tf_idf + description tf_idf) * sqrt(total equity funding)",
+        # ),
+        # (
+        #     tiered_news_make_news_1_5_x_desc_tf_idf_times_ln_equity_funding,
+        #     "(Tiered News tf_idf + (1.5 * description tf_idf)) * ln(2 + total equity funding)",
+        # ),
+        # (
+        #     tiered_news_make_news_desc_expert_collection_times_ln_equity_funding,
+        #     "(Tiered News tf_idf + description tf_idf + expert collection name tf_idf) * ln(2 + total equity funding)",
+        # ),
+        # (
+        #     tiered_news_make_0_5_x_news_desc_expert_collection_times_ln_equity_funding,
+        #     "((0.5 * Tiered News tf_idf) + description tf_idf + expert collection name tf_idf) * ln(2 + total equity funding)",
+        # ),
+        # (
+        #     tiered_news_make_0_5_x_news_desc_flattened1_expert_collection_times_ln_equity_funding,
+        #     "((0.5 * Tiered News tf_idf) + description tf_idf + expert collection name flattened to 1) * ln(2 + total equity funding)",
+        # ),
+        # (
+        #     tiered_news_make_0_2_x_news_desc_flattened1_expert_collection_times_ln_equity_funding,
+        #     "((0.2 * Tiered News tf_idf) + description tf_idf + expert collection name flattened to 1) * ln(2 + total equity funding)",
+        # ),
+        # (
+        #     tiered_news_make_description_tf_idf_news_tfidf_collection_tf_idf_X_ln_equity_funding_X_log_num_collections,
+        #     "(Tiered News tf_idf + description tf_idf + expert collection name tf_idf) * ln(2 + total equity funding) * ln(2 + number of expert collections)",
+        # ),
+        # (
+        #     tiered_news_make_description_tf_idf_0_5_x_news_tfidf_collection_tf_idf_X_ln_equity_funding_X_ln_num_collections,
+        #     "((0.5 * Tiered News tf_idf) + description tf_idf + expert collection name tf_idf) * ln(2 + total equity funding) * ln(2 + number of expert collections)",
+        # ),
+        # (
+        #     tiered_news_make_description_tf_idf_news_tfidf_collection_tf_idf_X_ln_2X_equity_funding_X_ln_num_collections,
+        #     "((0.5 * Tiered News tf_idf) + description tf_idf + expert collection name tf_idf) * ln(2 + 2*(total equity funding)) * ln(2 + number of expert collections)",
+        # ),
+        # TODO: is there news in here?
+        # (
+        #     tiered_news_make_description_tf_idf_news_tfidf_flattened1_collection_X_ln_equity_funding_X_ln_num_collections,
+        #     "(Tiered News tf_idf + description tf_idf + expert collection name lattened to 1) * ln(2 + total equity funding) * ln(2 + number of expert collections)",
+        # )
     ]
-    search_terms = TERRY_TERMS
+    search_terms = IU_REVIEWED_TERMS
     wb = Workbook()
+    ws = wb.get_active_sheet()
     i = 1
+    query_summaries = {}
     for query_builder, description in query_builders:
         print(f"Running query {description}")
         es_responses = run_search_terms(query_builder, search_terms)
-        es_results = process_iss_results(es_responses)
-        example_query = dumps(query_builder("searchTerm", 0, 25))
-        write_results(wb, es_results, example_query, description, i)
+        es_results, summary_data = process_iss_results(es_responses)
+        example_query = dumps(query_builder("searchTerm", 0, 100))
+        write_results(ws, es_results, example_query, description, i)
+        query_summaries[i] = summary_data
+        ws = wb.create_sheet()
         i += 1
+    ws.title = "Query Summaries"
+    write_summary(ws, query_summaries)
     timestamp = datetime.now().strftime("%Y-%d-%m_%H_%M_%s")
     print("saving excel file")
     wb.save(f"SearchResults_{timestamp}.xlsx")
