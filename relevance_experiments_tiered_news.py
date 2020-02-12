@@ -1,5 +1,6 @@
 def tiered_news_make_news_desc_tf_idf_times_equity_funding(query_val: str, es_from: int, es_size: int):
     return {
+        "explain": True,
         "from": 0,
         "size": es_size,
         "query": {
@@ -199,6 +200,7 @@ def tiered_news_make_news_desc_tf_idf_times_equity_funding(query_val: str, es_fr
 
 def tiered_news_make_news_desc_tf_idf_times_ln_equity_funding(query_val: str, es_from: int, es_size: int):
     return {
+        "explain": True,
         "from": 0,
         "size": es_size,
         "query": {
@@ -220,7 +222,7 @@ def tiered_news_make_news_desc_tf_idf_times_ln_equity_funding(query_val: str, es
                                                 "factor": 1,
                                                 "field": "org_total_equity_funding",
                                                 "missing": 1,
-                                                "modifier": "ln1p",
+                                                "modifier": "ln2p",
                                             }
                                         }
                                     ],
@@ -399,6 +401,7 @@ def tiered_news_make_news_desc_tf_idf_times_ln_equity_funding(query_val: str, es
 
 def tiered_news_make_news_desc_tf_idf_times_sqrt_equity_funding(query_val: str, es_from: int, es_size: int):
     return {
+        "explain": True,
         "from": 0,
         "size": es_size,
         "query": {
@@ -599,6 +602,7 @@ def tiered_news_make_news_desc_tf_idf_times_sqrt_equity_funding(query_val: str, 
 
 def tiered_news_make_news_1_5_x_desc_tf_idf_times_ln_equity_funding(query_val: str, es_from: int, es_size: int):
     return {
+        "explain": True,
         "from": 0,
         "size": es_size,
         "query": {
@@ -620,7 +624,7 @@ def tiered_news_make_news_1_5_x_desc_tf_idf_times_ln_equity_funding(query_val: s
                                                 "factor": 1,
                                                 "field": "org_total_equity_funding",
                                                 "missing": 1,
-                                                "modifier": "ln1p",
+                                                "modifier": "ln2p",
                                             }
                                         }
                                     ],
@@ -799,6 +803,7 @@ def tiered_news_make_news_1_5_x_desc_tf_idf_times_ln_equity_funding(query_val: s
 
 def tiered_news_make_news_desc_expert_collection_times_ln_equity_funding(query_val: str, es_from: int, es_size: int):
     return {
+        "explain": True,
         "from": es_from,
         "size": es_size,
         "query": {
@@ -820,7 +825,7 @@ def tiered_news_make_news_desc_expert_collection_times_ln_equity_funding(query_v
                                                 "factor": 1,
                                                 "field": "org_total_equity_funding",
                                                 "missing": 1,
-                                                "modifier": "ln1p",
+                                                "modifier": "ln2p",
                                             }
                                         }
                                     ],
@@ -1006,6 +1011,7 @@ def tiered_news_make_0_5_x_news_desc_expert_collection_times_ln_equity_funding(
     query_val: str, es_from: int, es_size: int
 ):
     return {
+        "explain": True,
         "from": es_from,
         "size": es_size,
         "query": {
@@ -1027,7 +1033,7 @@ def tiered_news_make_0_5_x_news_desc_expert_collection_times_ln_equity_funding(
                                                 "factor": 1,
                                                 "field": "org_total_equity_funding",
                                                 "missing": 1,
-                                                "modifier": "ln1p",
+                                                "modifier": "ln2p",
                                             }
                                         }
                                     ],
@@ -1213,6 +1219,7 @@ def tiered_news_make_0_5_x_news_desc_flattened1_expert_collection_times_ln_equit
     query_val: str, es_from: int, es_size: int
 ):
     return {
+        "explain": True,
         "from": es_from,
         "size": es_size,
         "query": {
@@ -1234,7 +1241,7 @@ def tiered_news_make_0_5_x_news_desc_flattened1_expert_collection_times_ln_equit
                                                 "factor": 1,
                                                 "field": "org_total_equity_funding",
                                                 "missing": 1,
-                                                "modifier": "ln1p",
+                                                "modifier": "ln2p",
                                             }
                                         }
                                     ],
@@ -1428,6 +1435,7 @@ def tiered_news_make_0_2_x_news_desc_flattened1_expert_collection_times_ln_equit
     query_val: str, es_from: int, es_size: int
 ):
     return {
+        "explain": True,
         "from": es_from,
         "size": es_size,
         "query": {
@@ -1449,7 +1457,7 @@ def tiered_news_make_0_2_x_news_desc_flattened1_expert_collection_times_ln_equit
                                                 "factor": 1,
                                                 "field": "org_total_equity_funding",
                                                 "missing": 1,
-                                                "modifier": "ln1p",
+                                                "modifier": "ln2p",
                                             }
                                         }
                                     ],
@@ -1639,10 +1647,11 @@ def tiered_news_make_0_2_x_news_desc_flattened1_expert_collection_times_ln_equit
     }
 
 
-def tiered_news_make_description_tf_idf_0_5_x_news_tfidf_collection_tf_idf_X_ln_equity_funding_X_ln_num_collections(
+def tiered_news_make_description_tf_idf_news_tfidf_collection_tf_idf_X_ln_equity_funding_X_log_num_collections(
     query_val, es_from, es_size
 ):
     return {
+        "explain": True,
         "from": es_from,
         "size": es_size,
         "query": {
@@ -1664,14 +1673,229 @@ def tiered_news_make_description_tf_idf_0_5_x_news_tfidf_collection_tf_idf_X_ln_
                                                 "factor": 1,
                                                 "field": "org_total_equity_funding",
                                                 "missing": 1,
-                                                "modifier": "ln1p",
+                                                "modifier": "ln2p",
                                             }
                                         },
                                         {
                                             "field_value_factor": {
                                                 "field": "num_expert_collections",
+                                                "missing": 0,
+                                                "modifier": "log2p",
+                                            }
+                                        },
+                                    ],
+                                    "query": {
+                                        "bool": {
+                                            "should": [
+                                                {
+                                                    "constant_score": {
+                                                        "boost": 0,
+                                                        "filter": {
+                                                            "bool": {
+                                                                "should": [
+                                                                    {
+                                                                        "match_phrase": {
+                                                                            "search_term_org_name_no_exits": {
+                                                                                "query": query_val
+                                                                            }
+                                                                        }
+                                                                    },
+                                                                    {
+                                                                        "prefix": {
+                                                                            "search_term_org_url_no_exits.keyword": query_val
+                                                                        }
+                                                                    },
+                                                                ]
+                                                            }
+                                                        },
+                                                    }
+                                                },
+                                                {
+                                                    "match_phrase": {
+                                                        "search_term_org_description_no_exits": {
+                                                            "boost": 1,
+                                                            "query": query_val,
+                                                            "slop": 5,
+                                                        }
+                                                    }
+                                                },
+                                                {
+                                                    "constant_score": {
+                                                        "boost": 0,
+                                                        "filter": {
+                                                            "bool": {
+                                                                "should": [
+                                                                    {
+                                                                        "match_phrase": {
+                                                                            "search_term_org_competitor_no_exits": {
+                                                                                "query": query_val
+                                                                            }
+                                                                        }
+                                                                    },
+                                                                    {
+                                                                        "prefix": {
+                                                                            "search_term_org_competitor_url_no_exits.keyword": query_val
+                                                                        }
+                                                                    },
+                                                                ]
+                                                            }
+                                                        },
+                                                    }
+                                                },
+                                                {
+                                                    "constant_score": {
+                                                        "boost": 0,
+                                                        "filter": {
+                                                            "prefix": {
+                                                                "search_term_org_investor_name_no_exits.keyword": query_val
+                                                            }
+                                                        },
+                                                    }
+                                                },
+                                                {
+                                                    "dis_max": {
+                                                        "queries": [
+                                                            {
+                                                                "match_phrase": {
+                                                                    "org_news_noun_phrases_tier_one_no_exit": {
+                                                                        "boost": 0.1,
+                                                                        "query": query_val,
+                                                                    }
+                                                                }
+                                                            },
+                                                            {
+                                                                "match_phrase": {
+                                                                    "org_news_noun_phrases_tier_two_no_exit": {
+                                                                        "boost": 0.2,
+                                                                        "query": query_val,
+                                                                    }
+                                                                }
+                                                            },
+                                                            {
+                                                                "match_phrase": {
+                                                                    "org_news_noun_phrases_tier_three_no_exit": {
+                                                                        "boost": 0.3,
+                                                                        "query": query_val,
+                                                                    }
+                                                                }
+                                                            },
+                                                            {
+                                                                "match_phrase": {
+                                                                    "org_news_noun_phrases_tier_four_no_exit": {
+                                                                        "boost": 0.4,
+                                                                        "query": query_val,
+                                                                    }
+                                                                }
+                                                            },
+                                                            {
+                                                                "match_phrase": {
+                                                                    "org_news_noun_phrases_tier_five_no_exit": {
+                                                                        "boost": 0.5,
+                                                                        "query": query_val,
+                                                                    }
+                                                                }
+                                                            },
+                                                            {
+                                                                "match_phrase": {
+                                                                    "org_news_noun_phrases_tier_six_no_exit": {
+                                                                        "boost": 0.6,
+                                                                        "query": query_val,
+                                                                    }
+                                                                }
+                                                            },
+                                                            {
+                                                                "match_phrase": {
+                                                                    "org_news_noun_phrases_tier_seven_no_exit": {
+                                                                        "boost": 0.7,
+                                                                        "query": query_val,
+                                                                    }
+                                                                }
+                                                            },
+                                                            {
+                                                                "match_phrase": {
+                                                                    "org_news_noun_phrases_tier_eight_no_exit": {
+                                                                        "boost": 0.8,
+                                                                        "query": query_val,
+                                                                    }
+                                                                }
+                                                            },
+                                                            {
+                                                                "match_phrase": {
+                                                                    "org_news_noun_phrases_tier_nine_no_exit": {
+                                                                        "boost": 0.9,
+                                                                        "query": query_val,
+                                                                    }
+                                                                }
+                                                            },
+                                                            {
+                                                                "match_phrase": {
+                                                                    "org_news_noun_phrases_tier_ten_no_exit": {
+                                                                        "boost": 0.10,
+                                                                        "query": query_val,
+                                                                    }
+                                                                }
+                                                            },
+                                                        ]
+                                                    }
+                                                },
+                                                {
+                                                    "match": {
+                                                        "expert_collection_names": {"boost": 1, "query": query_val}
+                                                    }
+                                                },
+                                            ]
+                                        }
+                                    },
+                                }
+                            },
+                        ]
+                    }
+                }
+            }
+        },
+        "sort": [
+            {"_score": {"order": "desc"}},
+            {"org_last_funding_funding_date": {"order": "desc"}},
+            {"org_num_deals": {"order": "desc"}},
+            {"index_key": {"order": "asc"}},
+        ],
+    }
+
+
+def tiered_news_make_description_tf_idf_0_5_x_news_tfidf_collection_tf_idf_X_log_equity_funding_X_log_num_collections(
+    query_val, es_from, es_size
+):
+    return {
+        "explain": True,
+        "from": es_from,
+        "size": es_size,
+        "query": {
+            "bool": {
+                "must": {
+                    "bool": {
+                        "should": [
+                            {
+                                "constant_score": {
+                                    "boost": 10000000000000,
+                                    "filter": {"match": {"org_name.keyword": {"query": query_val}}},
+                                }
+                            },
+                            {
+                                "function_score": {
+                                    "functions": [
+                                        {
+                                            "field_value_factor": {
+                                                "factor": 1,
+                                                "field": "org_total_equity_funding",
                                                 "missing": 1,
-                                                "modifier": "ln1p",
+                                                "modifier": "ln2p",
+                                            }
+                                        },
+                                        {
+                                            "field_value_factor": {
+                                                "field": "num_expert_collections",
+                                                "missing": 0,
+                                                "modifier": "log2p",
                                             }
                                         },
                                     ],
@@ -1853,10 +2077,11 @@ def tiered_news_make_description_tf_idf_0_5_x_news_tfidf_collection_tf_idf_X_ln_
     }
 
 
-def tiered_news_make_description_tf_idf_news_tfidf_collection_tf_idf_X_ln_equity_funding_X_ln_num_collections(
+def tiered_news_make_description_tf_idf_news_tfidf_collection_tf_idf_X_ln_2X_equity_funding_X_ln_num_collections(
     query_val, es_from, es_size
 ):
     return {
+        "explain": True,
         "from": es_from,
         "size": es_size,
         "query": {
@@ -1875,17 +2100,17 @@ def tiered_news_make_description_tf_idf_news_tfidf_collection_tf_idf_X_ln_equity
                                     "functions": [
                                         {
                                             "field_value_factor": {
-                                                "factor": 1,
+                                                "factor": 2,
                                                 "field": "org_total_equity_funding",
                                                 "missing": 1,
-                                                "modifier": "ln1p",
+                                                "modifier": "ln2p",
                                             }
                                         },
                                         {
                                             "field_value_factor": {
                                                 "field": "num_expert_collections",
-                                                "missing": 1,
-                                                "modifier": "ln1p",
+                                                "missing": 0,
+                                                "modifier": "ln2p",
                                             }
                                         },
                                     ],
@@ -2041,147 +2266,6 @@ def tiered_news_make_description_tf_idf_news_tfidf_collection_tf_idf_X_ln_equity
                                                                 }
                                                             },
                                                         ]
-                                                    }
-                                                },
-                                                {
-                                                    "match": {
-                                                        "expert_collection_names": {"boost": 1, "query": query_val}
-                                                    }
-                                                },
-                                            ]
-                                        }
-                                    },
-                                }
-                            },
-                        ]
-                    }
-                }
-            }
-        },
-        "sort": [
-            {"_score": {"order": "desc"}},
-            {"org_last_funding_funding_date": {"order": "desc"}},
-            {"org_num_deals": {"order": "desc"}},
-            {"index_key": {"order": "asc"}},
-        ],
-    }
-
-
-def tiered_news_make_description_tf_idf_news_tfidf_flattened1_collection_X_ln_equity_funding_X_ln_num_collections(
-    query_val, es_from, es_size
-):
-    return {
-        "from": es_from,
-        "size": es_size,
-        "query": {
-            "bool": {
-                "must": {
-                    "bool": {
-                        "should": [
-                            {
-                                "constant_score": {
-                                    "boost": 10000000000000,
-                                    "filter": {"match": {"org_name.keyword": {"query": query_val}}},
-                                }
-                            },
-                            {
-                                "function_score": {
-                                    "functions": [
-                                        {
-                                            "field_value_factor": {
-                                                "factor": 1,
-                                                "field": "org_total_equity_funding",
-                                                "missing": 1,
-                                                "modifier": "ln1p",
-                                            }
-                                        },
-                                        {
-                                            "field_value_factor": {
-                                                "field": "num_expert_collections",
-                                                "missing": 1,
-                                                "modifier": "ln1p",
-                                            }
-                                        },
-                                    ],
-                                    "query": {
-                                        "bool": {
-                                            "should": [
-                                                {
-                                                    "constant_score": {
-                                                        "boost": 0,
-                                                        "filter": {
-                                                            "bool": {
-                                                                "should": [
-                                                                    {
-                                                                        "match_phrase": {
-                                                                            "search_term_org_name_no_exits": {
-                                                                                "query": query_val
-                                                                            }
-                                                                        }
-                                                                    },
-                                                                    {
-                                                                        "prefix": {
-                                                                            "search_term_org_url_no_exits.keyword": query_val
-                                                                        }
-                                                                    },
-                                                                ]
-                                                            }
-                                                        },
-                                                    }
-                                                },
-                                                {
-                                                    "match_phrase": {
-                                                        "search_term_org_description_no_exits": {
-                                                            "boost": 1,
-                                                            "query": query_val,
-                                                            "slop": 5,
-                                                        }
-                                                    }
-                                                },
-                                                {
-                                                    "constant_score": {
-                                                        "boost": 0,
-                                                        "filter": {
-                                                            "bool": {
-                                                                "should": [
-                                                                    {
-                                                                        "match_phrase": {
-                                                                            "search_term_org_competitor_no_exits": {
-                                                                                "query": query_val
-                                                                            }
-                                                                        }
-                                                                    },
-                                                                    {
-                                                                        "prefix": {
-                                                                            "search_term_org_competitor_url_no_exits.keyword": query_val
-                                                                        }
-                                                                    },
-                                                                ]
-                                                            }
-                                                        },
-                                                    }
-                                                },
-                                                {
-                                                    "constant_score": {
-                                                        "boost": 0,
-                                                        "filter": {
-                                                            "prefix": {
-                                                                "search_term_org_investor_name_no_exits.keyword": query_val
-                                                            }
-                                                        },
-                                                    }
-                                                },
-                                                {
-                                                    "constant_score": {
-                                                        "boost": 1,
-                                                        "filter": {
-                                                            "match": {
-                                                                "expert_collection_names": {
-                                                                    "boost": 1,
-                                                                    "query": query_val,
-                                                                }
-                                                            }
-                                                        },
                                                     }
                                                 },
                                                 {

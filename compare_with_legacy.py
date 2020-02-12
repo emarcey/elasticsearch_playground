@@ -113,6 +113,8 @@ def run_search_terms(query_builder, search_terms):
 def process_iss_results(search_term_to_results):
     out = defaultdict(list)
     # print("search_term_to_results", search_term_to_results)
+    summary_data = {"num_bad_included": 0, "num_good_included": 0, "num_good_missed": 0}
+
     for search_term, results in search_term_to_results.items():
         id_row = 1
         for row in results["hits"]["hits"]:
@@ -139,9 +141,9 @@ def process_iss_results(search_term_to_results):
 
 
 def main():
-    top_search_responses, _ = ts_fetch_searchterm_company_results()
+    top_search_responses, _ = ts_fetch_searchterm_company_results(["cool"])
     ts_results = process_ts_results(top_search_responses)
-    es_responses = run_search_terms(make_new_query, TERRY_TERMS)
+    es_responses = run_search_terms(make_new_query, ["cool"])
     es_results = process_iss_results(es_responses)
     write_results(es_results, ts_results)
 
