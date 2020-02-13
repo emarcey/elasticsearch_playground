@@ -9,7 +9,20 @@ index = ""
 
 def make_new_query(query_val: str, es_from: int, es_size: int):
     return {
-        "_source": True,
+        "_source": [
+            "org_description",
+            "org_name",
+            "org_url",
+            "org_page_views",
+            "org_mosaic_overall",
+            "org_last_funding_funding_date",
+            "org_news_article_count",
+            "all_org_news_noun_phrases",
+            "org_total_funding",
+            "org_num_fundings",
+            "org_num_deals",
+            "org_investor",
+        ],
         "explain": False,
         "from": es_from,
         "size": es_size,
@@ -45,7 +58,7 @@ def make_new_query(query_val: str, es_from: int, es_size: int):
                                         "bool": {
                                             "must": {
                                                 "match_phrase": {
-                                                    "search_term_org_description_no_name_no_exits": {
+                                                    "search_term_org_description_no_exits": {
                                                         "query": query_val,
                                                         "slop": 5,
                                                     }
@@ -88,7 +101,7 @@ def make_new_query(query_val: str, es_from: int, es_size: int):
                                     "queries": [
                                         {
                                             "constant_score": {
-                                                "boost": 1,
+                                                "boost": 0.1,
                                                 "filter": {
                                                     "match_phrase": {
                                                         "org_news_noun_phrases_tier_one_no_exit": {"query": query_val}
@@ -98,7 +111,7 @@ def make_new_query(query_val: str, es_from: int, es_size: int):
                                         },
                                         {
                                             "constant_score": {
-                                                "boost": 0.85,
+                                                "boost": 0.2,
                                                 "filter": {
                                                     "match_phrase": {
                                                         "org_news_noun_phrases_tier_two_no_exit": {"query": query_val}
@@ -108,7 +121,7 @@ def make_new_query(query_val: str, es_from: int, es_size: int):
                                         },
                                         {
                                             "constant_score": {
-                                                "boost": 0.5,
+                                                "boost": 0.3,
                                                 "filter": {
                                                     "match_phrase": {
                                                         "org_news_noun_phrases_tier_three_no_exit": {"query": query_val}
@@ -118,10 +131,70 @@ def make_new_query(query_val: str, es_from: int, es_size: int):
                                         },
                                         {
                                             "constant_score": {
-                                                "boost": 0.15,
+                                                "boost": 0.4,
                                                 "filter": {
                                                     "match_phrase": {
                                                         "org_news_noun_phrases_tier_four_no_exit": {"query": query_val}
+                                                    }
+                                                },
+                                            }
+                                        },
+                                        {
+                                            "constant_score": {
+                                                "boost": 0.5,
+                                                "filter": {
+                                                    "match_phrase": {
+                                                        "org_news_noun_phrases_tier_five_no_exit": {"query": query_val}
+                                                    }
+                                                },
+                                            }
+                                        },
+                                        {
+                                            "constant_score": {
+                                                "boost": 0.6,
+                                                "filter": {
+                                                    "match_phrase": {
+                                                        "org_news_noun_phrases_tier_six_no_exit": {"query": query_val}
+                                                    }
+                                                },
+                                            }
+                                        },
+                                        {
+                                            "constant_score": {
+                                                "boost": 0.7,
+                                                "filter": {
+                                                    "match_phrase": {
+                                                        "org_news_noun_phrases_tier_seven_no_exit": {"query": query_val}
+                                                    }
+                                                },
+                                            }
+                                        },
+                                        {
+                                            "constant_score": {
+                                                "boost": 0.8,
+                                                "filter": {
+                                                    "match_phrase": {
+                                                        "org_news_noun_phrases_tier_eight_no_exit": {"query": query_val}
+                                                    }
+                                                },
+                                            }
+                                        },
+                                        {
+                                            "constant_score": {
+                                                "boost": 0.9,
+                                                "filter": {
+                                                    "match_phrase": {
+                                                        "org_news_noun_phrases_tier_nine_no_exit": {"query": query_val}
+                                                    }
+                                                },
+                                            }
+                                        },
+                                        {
+                                            "constant_score": {
+                                                "boost": 1,
+                                                "filter": {
+                                                    "match_phrase": {
+                                                        "org_news_noun_phrases_tier_ten_no_exit": {"query": query_val}
                                                     }
                                                 },
                                             }
