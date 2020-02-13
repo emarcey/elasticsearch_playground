@@ -286,7 +286,7 @@ def main():
         # (make_current_prd_query, "Current prd query"),
         (
             make_description_tf_idf_tiered_news_tfidf_collection_big_flat_X_sqrt_equity_funding_X_log_num_collections,
-            "(tiered News tf_idf + description tf_idf + expert collection name flat) * ln(2 + total equity funding) * log(2 + number of expert collections)",
+            "(tiered News tf_idf favoring upper tiers + description tf_idf + expert collection name flat) * sqrt( total equity funding) * log(2 + number of expert collections)",
         )
     ]
     search_terms = IU_REVIEWED_TERMS
