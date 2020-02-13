@@ -11328,7 +11328,6 @@ IU_QUALITY_MAPPING = {
         "HomeLight": "good",
         "ZeroDown": "good",
         "Reonomy": "good",
-        "Breather": "bad",
         "Juniper Square": "good",
         "Rex": "good",
         "Blueground": "good",
