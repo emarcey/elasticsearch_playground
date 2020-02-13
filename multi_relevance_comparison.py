@@ -1,5 +1,13 @@
 from openpyxl import Workbook
-from const import ELASTICSEARCH_HOST_URL, HEADER, TERRY_TERMS, IU_QUALITY_MAPPING, SAFE_WORDS, IU_REVIEWED_TERMS
+from const import (
+    ELASTICSEARCH_HOST_URL,
+    HEADER,
+    TERRY_TERMS,
+    IU_QUALITY_MAPPING,
+    SAFE_WORDS,
+    IU_REVIEWED_TERMS,
+    ORG_NAME_SEARCH_TERMS,
+)
 from json import dumps
 from requests import post
 from datetime import datetime
@@ -29,20 +37,23 @@ def write_results(ws, iss_response, example_query, query_description, sheet_numb
             "cxn_name_score",
             "funding_multiplier",
             "num_cxn_multiplier",
+            "name/url score",
+            "competitor score",
+            "investor score",
             "expert collections",
             "number of expert collections",
             "org_total_equity_funding",
-            "tier1_news",
-            "tier2_news",
-            "tier3_news",
-            "tier4_news",
-            "tier5_news",
-            "tier6_news",
-            "tier7_news",
-            "tier8_news",
-            "tier9_news",
-            "tier10_news",
-            "article_count_multiplier",
+            # "tier1_news",
+            # "tier2_news",
+            # "tier3_news",
+            # "tier4_news",
+            # "tier5_news",
+            # "tier6_news",
+            # "tier7_news",
+            # "tier8_news",
+            # "tier9_news",
+            # "tier10_news",
+            # "article_count_multiplier",
             "URL",
             "id_cbi_entity",
             "profile views",
@@ -50,8 +61,8 @@ def write_results(ws, iss_response, example_query, query_description, sheet_numb
             "last funding date",
             "news article count",
             "org_num_fundings",
-            "org_num_deals",
-            "number of investors",
+            # "org_num_deals",
+            # "number of investors",
         ]
     )
     ws.title = f"Query {sheet_number}"
@@ -94,7 +105,7 @@ def write_summary(ws, query_summaries):
 def run_search_terms(query_builder, search_terms):
     out = {}
     for search_term in search_terms:
-        query = query_builder(search_term, 0, 200)
+        query = query_builder(search_term, 0, 25)
         query_json = dumps(query)
         query_resp = post(f"{ELASTICSEARCH_HOST_URL}/org-read/_search", headers=HEADER, data=query_json)
         out[search_term] = query_resp.json()
@@ -120,8 +131,8 @@ def process_iss_results(search_term_to_results):
             data = row["_source"]
             explain = row["_explanation"]
 
-            description_score, news_score, cxn_name_score, funding_multiplier, num_cxn_multiplier, tier1_news, tier2_news, tier3_news, tier4_news, tier5_news, tier6_news, tier7_news, tier8_news, tier9_news, tier10_news, article_count_multiplier = process_explain(
-                explain, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+            description_score, news_score, cxn_name_score, funding_multiplier, num_cxn_multiplier, tier1_news, tier2_news, tier3_news, tier4_news, tier5_news, tier6_news, tier7_news, tier8_news, tier9_news, tier10_news, article_count_multiplier, name_url_score, competitor_score, investor_score = process_explain(
+                explain, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
             )
             score = row["_score"]
             org_name = data.get("org_name", "")
@@ -143,20 +154,23 @@ def process_iss_results(search_term_to_results):
                 cxn_name_score,
                 funding_multiplier,
                 num_cxn_multiplier,
+                name_url_score,
+                competitor_score,
+                investor_score,
                 str(collections),
                 len(collections),
                 data.get("org_total_equity_funding", ""),
-                tier1_news,
-                tier2_news,
-                tier3_news,
-                tier4_news,
-                tier5_news,
-                tier6_news,
-                tier7_news,
-                tier8_news,
-                tier9_news,
-                tier10_news,
-                article_count_multiplier,
+                # tier1_news,
+                # tier2_news,
+                # tier3_news,
+                # tier4_news,
+                # tier5_news,
+                # tier6_news,
+                # tier7_news,
+                # tier8_news,
+                # tier9_news,
+                # tier10_news,
+                # article_count_multiplier,
                 data.get("org_url", ""),
                 data.get("id_org", ""),
                 data.get("org_page_views", ""),
@@ -164,8 +178,8 @@ def process_iss_results(search_term_to_results):
                 data.get("org_last_funding_funding_date", ""),
                 data.get("org_news_article_count", ""),
                 data.get("org_num_fundings", ""),
-                data.get("org_num_deals", ""),
-                len(data.get("org_investor", [])),
+                # data.get("org_num_deals", ""),
+                # len(data.get("org_investor", [])),
             ]
             out[search_term].append(excel_row)
             id_row += 1
@@ -200,6 +214,9 @@ def process_explain(
     tier9_news,
     tier10_news,
     article_count_multiplier,
+    name_url_score,
+    competitor_score,
+    investor_score,
 ):
     details = explain.get("details", [])
     for detail in details:
@@ -241,8 +258,14 @@ def process_explain(
             tier10_news = detail["value"]
         elif "field value function: log(doc['org_news_article_count']" in description:
             article_count_multiplier = detail["value"]
+        elif "ConstantScore(search_term_org_name_no_exits" in description:
+            name_url_score = detail["value"]
+        elif "ConstantScore(search_term_org_investor_name_no_exits" in description:
+            investor_score = detail["value"]
+        elif "ConstantScore(search_term_org_competitor_no_exits" in description:
+            competitor_score = detail["value"]
 
-        description_score, news_score, cxn_name_score, funding_multiplier, num_cxn_multiplier, tier1_news, tier2_news, tier3_news, tier4_news, tier5_news, tier6_news, tier7_news, tier8_news, tier9_news, tier10_news, article_count_multiplier = process_explain(
+        description_score, news_score, cxn_name_score, funding_multiplier, num_cxn_multiplier, tier1_news, tier2_news, tier3_news, tier4_news, tier5_news, tier6_news, tier7_news, tier8_news, tier9_news, tier10_news, article_count_multiplier, name_url_score, competitor_score, investor_score = process_explain(
             detail,
             description_score,
             news_score,
@@ -260,6 +283,9 @@ def process_explain(
             tier9_news,
             tier10_news,
             article_count_multiplier,
+            name_url_score,
+            competitor_score,
+            investor_score,
         )
     return (
         description_score,
@@ -278,6 +304,9 @@ def process_explain(
         tier9_news,
         tier10_news,
         article_count_multiplier,
+        name_url_score,
+        competitor_score,
+        investor_score,
     )
 
 
@@ -286,10 +315,11 @@ def main():
         # (make_current_prd_query, "Current prd query"),
         (
             make_description_tf_idf_tiered_news_tfidf_collection_big_flat_X_sqrt_equity_funding_X_log_num_collections,
-            "(tiered News tf_idf favoring upper tiers + description tf_idf + expert collection name flat) * sqrt( total equity funding) * log(2 + number of expert collections)",
+            # "(tiered News tf_idf + description tf_idf + expert collection name flat) * ln(2 + total equity funding) * log(2 + number of expert collections)",
+            "name or url = 1, competitor = 1, investor = 0.5, cxn name = 1",
         )
     ]
-    search_terms = IU_REVIEWED_TERMS
+    search_terms = ORG_NAME_SEARCH_TERMS + IU_REVIEWED_TERMS
     wb = Workbook()
     ws = wb.get_active_sheet()
     i = 1

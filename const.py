@@ -7,6 +7,8 @@ DOUBLE_LINE = "\n\n"
 TABLES_DIR = "tables"
 
 
+ORG_NAME_SEARCH_TERMS = ["Lemonade", "Uber", "Didi Chuxing", "Stripe", "softbank", "china", "japan"]
+
 SEARCH_TERMS = [
     "Lemonade",
     "Cannabis",
