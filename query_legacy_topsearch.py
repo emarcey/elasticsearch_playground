@@ -41,7 +41,7 @@ def ts_fetch_searchterm_company_results(search_terms):
         # from IPython import embed
         # embed()
         all_results[search_term].append(resp_json)
-        id_companies = [hit["idCompany"] for hit in resp_json["company"]["results"]]
+        id_companies = [hit["idCompany"] for hit in resp_json.get("company", {}).get("results", [])]
         search_term_to_id_companies[search_term].extend(id_companies)
     return all_results, search_term_to_id_companies
 
@@ -54,6 +54,7 @@ def process_ts_results(search_term_to_resp_json):
             for hit in resp_json["company"]["results"]:
                 i += 1
                 row = [
+                    search_term,
                     i,
                     hit.get("score", 0),
                     hit.get("company", ""),

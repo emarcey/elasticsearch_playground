@@ -7,7 +7,10 @@ from const import (
     SAFE_WORDS,
     IU_REVIEWED_TERMS,
     ORG_NAME_SEARCH_TERMS,
+    BIG_TESTING_ROUND_SEARCH_TERMS,
 )
+from get_profile_url import get_profile_url
+from current_prd_query import make_current_prd_query
 from json import dumps
 from requests import post
 from datetime import datetime
@@ -29,8 +32,10 @@ def write_results(ws, iss_response, example_query, query_description, sheet_numb
             "search term",
             "ranking",
             "Company Name",
-            "IU Qality",
             "description",
+            "company url",
+            "profile url",
+            "IU Quality",
             "score",
             "description_score",
             "news_score",
@@ -43,26 +48,25 @@ def write_results(ws, iss_response, example_query, query_description, sheet_numb
             "expert collections",
             "number of expert collections",
             "org_total_equity_funding",
-            # "tier1_news",
-            # "tier2_news",
-            # "tier3_news",
-            # "tier4_news",
-            # "tier5_news",
-            # "tier6_news",
-            # "tier7_news",
-            # "tier8_news",
-            # "tier9_news",
-            # "tier10_news",
-            # "article_count_multiplier",
-            "URL",
+            "tier1_news_score",
+            "tier2_news_score",
+            "tier3_news_score",
+            "tier4_news_score",
+            "tier5_news_score",
+            "tier6_news_score",
+            "tier7_news_score",
+            "tier8_news_score",
+            "tier9_news_score",
+            "tier10_news_score",
+            "article_count_multiplier",
             "id_cbi_entity",
             "profile views",
             "mosaic_overall",
             "last funding date",
             "news article count",
             "org_num_fundings",
-            # "org_num_deals",
-            # "number of investors",
+            "org_num_deals",
+            "number of investors",
         ]
     )
     ws.title = f"Query {sheet_number}"
@@ -138,6 +142,8 @@ def process_iss_results(search_term_to_results):
             org_name = data.get("org_name", "")
             quality = hit_quality.get(org_name)
             collections = data.get("expert_collection_names", [])
+            profile_url = get_profile_url(data["id_company"])
+
             if quality == "good":
                 good_included += 1
             elif quality == "bad":
@@ -146,8 +152,10 @@ def process_iss_results(search_term_to_results):
                 search_term,
                 id_row,
                 org_name,
-                quality,
                 data.get("org_description", ""),
+                data.get("org_url", ""),
+                profile_url,
+                quality,
                 score,
                 description_score,
                 news_score,
@@ -160,26 +168,25 @@ def process_iss_results(search_term_to_results):
                 str(collections),
                 len(collections),
                 data.get("org_total_equity_funding", ""),
-                # tier1_news,
-                # tier2_news,
-                # tier3_news,
-                # tier4_news,
-                # tier5_news,
-                # tier6_news,
-                # tier7_news,
-                # tier8_news,
-                # tier9_news,
-                # tier10_news,
-                # article_count_multiplier,
-                data.get("org_url", ""),
+                tier1_news,
+                tier2_news,
+                tier3_news,
+                tier4_news,
+                tier5_news,
+                tier6_news,
+                tier7_news,
+                tier8_news,
+                tier9_news,
+                tier10_news,
+                article_count_multiplier,
                 data.get("id_org", ""),
                 data.get("org_page_views", ""),
                 data.get("org_mosaic_overall", ""),
                 data.get("org_last_funding_funding_date", ""),
                 data.get("org_news_article_count", ""),
                 data.get("org_num_fundings", ""),
-                # data.get("org_num_deals", ""),
-                # len(data.get("org_investor", [])),
+                data.get("org_num_deals", ""),
+                len(data.get("org_investor", [])),
             ]
             out[search_term].append(excel_row)
             id_row += 1
@@ -312,14 +319,13 @@ def process_explain(
 
 def main():
     query_builders = [
-        # (make_current_prd_query, "Current prd query"),
+        (make_current_prd_query, "Current prd query"),
         (
             make_description_tf_idf_tiered_news_tfidf_collection_big_flat_X_sqrt_equity_funding_X_log_num_collections,
-            # "(tiered News tf_idf + description tf_idf + expert collection name flat) * ln(2 + total equity funding) * log(2 + number of expert collections)",
-            "name or url = 1, competitor = 1, investor = 0.5, cxn name = 1",
-        )
+            "(0.6 * tiered News tf_idf favoring upper tiers + description tf_idf + expert collection name flat + name or url flat + competitor flat + investor name flat) * ln(2 + total equity funding) * log(2 + number of expert collections)",
+        ),
     ]
-    search_terms = ORG_NAME_SEARCH_TERMS + IU_REVIEWED_TERMS
+    search_terms = BIG_TESTING_ROUND_SEARCH_TERMS
     wb = Workbook()
     ws = wb.get_active_sheet()
     i = 1
@@ -335,9 +341,10 @@ def main():
         i += 1
     ws.title = "Query Summaries"
     write_summary(ws, query_summaries)
-    timestamp = datetime.now().strftime("%Y-%d-%m_%H_%M_%s")
+    # timestamp = datetime.now().strftime("%Y-%d-%m_%H_%M_%s")
     print("saving excel file")
-    wb.save(f"SearchResults_{timestamp}.xlsx")
+    # wb.save(f"SearchResults_{timestamp}.xlsx")
+    wb.save(f"SearchResults_TESTING_FEB_2020.xlsx")
 
 
 if __name__ == "__main__":

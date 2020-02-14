@@ -1,7 +1,7 @@
 from datetime import datetime
 from openpyxl import Workbook
 from query_legacy_topsearch import ts_fetch_searchterm_company_results, process_ts_results
-from const import ELASTICSEARCH_HOST_URL, HEADER, TERRY_TERMS
+from const import ELASTICSEARCH_HOST_URL, HEADER, TERRY_TERMS, BIG_TESTING_ROUND_SEARCH_TERMS
 from json import dumps
 from requests import post
 from org_old_vs_new import make_new_query
@@ -11,80 +11,34 @@ from collections import defaultdict
 def write_results(iss_response, old_search_response):
     wb = Workbook()
     ws = wb.get_active_sheet()
+    ws.append(["search term", "ranking", "score", "Company Name", "URL", "description", "match type"])
     for search_term, old_hits in old_search_response.items():
-        ws.title = search_term
-        ws.append([f"search term: {search_term}"])
-        ws.append(
-            [
-                "legacy",
-                "legacy",
-                "legacy",
-                "legacy",
-                "legacy",
-                "legacy",
-                "new",
-                "new",
-                "new",
-                "new",
-                "new",
-                "new",
-                "new",
-                "new",
-                "new",
-                "new",
-                "new",
-                "new",
-                "new",
-            ]
-        )
-        ws.append(
-            [
-                "ranking",
-                "score",
-                "Company Name",
-                "URL",
-                "description",
-                "match type",
-                "ranking",
-                "score",
-                "Company Name",
-                "URL",
-                "description",
-                "profile views",
-                "mosaic_market",
-                "mosaic_momentum",
-                "mosaic_money",
-                "mosaic_overall",
-                "last funding date",
-                "news article count",
-                "noun phrases",
-            ]
-        )
-        new_hits = iss_response[search_term]
+
+        # new_hits = iss_response[search_term]
         for i in range(0, 100):
             row = []
             old_hit = [i + 1, "none", "none", "none", "none", "none"]
-            new_hit = [
-                i + 1,
-                "none",
-                "none",
-                "none",
-                "none",
-                "none",
-                "none",
-                "none",
-                "none",
-                "none",
-                "none",
-                "none",
-                "none",
-            ]
+            # new_hit = [
+            #     i + 1,
+            #     "none",
+            #     "none",
+            #     "none",
+            #     "none",
+            #     "none",
+            #     "none",
+            #     "none",
+            #     "none",
+            #     "none",
+            #     "none",
+            #     "none",
+            #     "none",
+            # ]
             if len(old_hits) >= i + 1:
                 old_hit = old_hits[i]
-            if len(new_hits) >= i + 1:
-                new_hit = new_hits[i]
+            # if len(new_hits) >= i + 1:
+            #     new_hit = new_hits[i]
             row.extend(old_hit)
-            row.extend(new_hit)
+            # row.extend(new_hit)
             try:
                 ws.append(row)
             except Exception:
@@ -95,7 +49,7 @@ def write_results(iss_response, old_search_response):
                     else:
                         new_row.append(s)
                 ws.append(new_row)
-        ws = wb.create_sheet()
+        # ws = wb.create_sheet()
     timestamp = datetime.now().strftime("%Y-%d-%m_%H_%M_%s")
     print("saving excel file")
     wb.save(f"SearchResults_{timestamp}.xlsx")
@@ -113,7 +67,6 @@ def run_search_terms(query_builder, search_terms):
 def process_iss_results(search_term_to_results):
     out = defaultdict(list)
     # print("search_term_to_results", search_term_to_results)
-    summary_data = {"num_bad_included": 0, "num_good_included": 0, "num_good_missed": 0}
 
     for search_term, results in search_term_to_results.items():
         id_row = 1
@@ -141,11 +94,11 @@ def process_iss_results(search_term_to_results):
 
 
 def main():
-    top_search_responses, _ = ts_fetch_searchterm_company_results(["cool"])
+    top_search_responses, _ = ts_fetch_searchterm_company_results(BIG_TESTING_ROUND_SEARCH_TERMS)
     ts_results = process_ts_results(top_search_responses)
-    es_responses = run_search_terms(make_new_query, ["cool"])
-    es_results = process_iss_results(es_responses)
-    write_results(es_results, ts_results)
+    # es_responses = run_search_terms(make_new_query, ["agtech"])
+    # es_results = process_iss_results(es_responses)
+    write_results({}, ts_results)
 
 
 if __name__ == "__main__":
