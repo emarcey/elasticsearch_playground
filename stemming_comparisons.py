@@ -1,5 +1,4 @@
 from datetime import datetime
-from hashids import Hashids
 import json
 from openpyxl import Workbook
 import os
@@ -8,6 +7,8 @@ import time
 from typing import Any, Callable, Dict, List, Tuple
 
 from const import IU_QUALITY_MAPPING, DIFFERENCES_SEARCH_TERMS
+from get_profile_url import get_profile_url
+from multi_relevance_comparison import process_explain
 from stemming_search_term_query import make_search_term_body
 
 
@@ -17,14 +18,6 @@ HEADERS = {"Content-Type": "application/json"}
 LIGHT_ENGLISH_STEMMER = "light_english"
 MINIMAL_ENGLISH_STEMMER = "minimal_english"
 STEM_DIR = "stemming_results"
-
-
-def get_profile_url(id_company):
-    prefix = "https://app.cbinsights.com/profiles/c"
-    hashids = Hashids("CBI Profiles")
-    suffix = hashids.encode(id_company)
-    url = f"{prefix}/{suffix}"
-    return url
 
 
 def make_search_url(index: str) -> str:
@@ -360,140 +353,6 @@ def build_explain(ws, results: Dict[str, List[Dict[str, Any]]]) -> None:
             ]
             ws.append(excel_row)
             id_row += 1
-
-
-def process_explain(
-    explain,
-    description_score,
-    news_score,
-    cxn_name_score,
-    funding_multiplier,
-    num_cxn_multiplier,
-    tier1_news,
-    tier2_news,
-    tier3_news,
-    tier4_news,
-    tier5_news,
-    tier6_news,
-    tier7_news,
-    tier8_news,
-    tier9_news,
-    tier10_news,
-    article_count_multiplier,
-    name_url_score,
-    competitor_score,
-    investor_score,
-):
-    details = explain.get("details", [])
-    for detail in details:
-        description = detail["description"]
-        if "weight(search_term_org_description_no_exit" in description:
-            description_score = detail["value"]
-
-        # Note: this will break if you use other dis_max queries besides for news
-        elif "weight(all_org_news_noun_phrases_no_exit" in description or description == "max of:":
-            news_score = detail["value"]
-
-        elif "weight(expert_collection_names" in description or "ConstantScore(expert_collection_names" in description:
-            cxn_name_score = detail["value"]
-
-        elif "field value function" in description and "org_total_equity_funding" in description:
-            funding_multiplier = detail["value"]
-
-        elif "field value function" in description and "num_expert_collections" in description:
-            num_cxn_multiplier = detail["value"]
-        elif "org_news_noun_phrases_tier_one_no_exit" in description:
-            tier1_news = detail["value"]
-        elif "org_news_noun_phrases_tier_two_no_exit" in description:
-            tier2_news = detail["value"]
-        elif "org_news_noun_phrases_tier_three_no_exit" in description:
-            tier3_news = detail["value"]
-        elif "org_news_noun_phrases_tier_four_no_exit" in description:
-            tier4_news = detail["value"]
-        elif "org_news_noun_phrases_tier_five_no_exit" in description:
-            tier5_news = detail["value"]
-        elif "org_news_noun_phrases_tier_six_no_exit" in description:
-            tier6_news = detail["value"]
-        elif "org_news_noun_phrases_tier_seven_no_exit" in description:
-            tier7_news = detail["value"]
-        elif "org_news_noun_phrases_tier_eight_no_exit" in description:
-            tier8_news = detail["value"]
-        elif "org_news_noun_phrases_tier_nine_no_exit" in description:
-            tier9_news = detail["value"]
-        elif "org_news_noun_phrases_tier_ten_no_exit" in description:
-            tier10_news = detail["value"]
-        elif "field value function: log(doc['org_news_article_count']" in description:
-            article_count_multiplier = detail["value"]
-        elif "ConstantScore(search_term_org_name_no_exits" in description:
-            name_url_score = detail["value"]
-        elif "ConstantScore(search_term_org_investor_name_no_exits" in description:
-            investor_score = detail["value"]
-        elif "ConstantScore(search_term_org_competitor_no_exits" in description:
-            competitor_score = detail["value"]
-
-        (
-            description_score,
-            news_score,
-            cxn_name_score,
-            funding_multiplier,
-            num_cxn_multiplier,
-            tier1_news,
-            tier2_news,
-            tier3_news,
-            tier4_news,
-            tier5_news,
-            tier6_news,
-            tier7_news,
-            tier8_news,
-            tier9_news,
-            tier10_news,
-            article_count_multiplier,
-            name_url_score,
-            competitor_score,
-            investor_score,
-        ) = process_explain(
-            detail,
-            description_score,
-            news_score,
-            cxn_name_score,
-            funding_multiplier,
-            num_cxn_multiplier,
-            tier1_news,
-            tier2_news,
-            tier3_news,
-            tier4_news,
-            tier5_news,
-            tier6_news,
-            tier7_news,
-            tier8_news,
-            tier9_news,
-            tier10_news,
-            article_count_multiplier,
-            name_url_score,
-            competitor_score,
-            investor_score,
-        )
-    return (
-        description_score,
-        news_score,
-        cxn_name_score,
-        funding_multiplier,
-        num_cxn_multiplier,
-        tier1_news,
-        tier2_news,
-        tier3_news,
-        tier4_news,
-        tier5_news,
-        tier6_news,
-        tier7_news,
-        tier8_news,
-        tier9_news,
-        tier10_news,
-        article_count_multiplier,
-        name_url_score,
-        competitor_score,
-        investor_score,
-    )
 
 
 def main() -> None:
