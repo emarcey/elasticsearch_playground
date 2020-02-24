@@ -135,9 +135,27 @@ def process_iss_results(search_term_to_results):
             data = row["_source"]
             explain = row["_explanation"]
 
-            description_score, news_score, cxn_name_score, funding_multiplier, num_cxn_multiplier, tier1_news, tier2_news, tier3_news, tier4_news, tier5_news, tier6_news, tier7_news, tier8_news, tier9_news, tier10_news, article_count_multiplier, name_url_score, competitor_score, investor_score = process_explain(
-                explain, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-            )
+            (
+                description_score,
+                news_score,
+                cxn_name_score,
+                funding_multiplier,
+                num_cxn_multiplier,
+                tier1_news,
+                tier2_news,
+                tier3_news,
+                tier4_news,
+                tier5_news,
+                tier6_news,
+                tier7_news,
+                tier8_news,
+                tier9_news,
+                tier10_news,
+                article_count_multiplier,
+                name_url_score,
+                competitor_score,
+                investor_score,
+            ) = process_explain(explain, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
             score = row["_score"]
             org_name = data.get("org_name", "")
             quality = hit_quality.get(org_name)
@@ -272,7 +290,27 @@ def process_explain(
         elif "ConstantScore(search_term_org_competitor_no_exits" in description:
             competitor_score = detail["value"]
 
-        description_score, news_score, cxn_name_score, funding_multiplier, num_cxn_multiplier, tier1_news, tier2_news, tier3_news, tier4_news, tier5_news, tier6_news, tier7_news, tier8_news, tier9_news, tier10_news, article_count_multiplier, name_url_score, competitor_score, investor_score = process_explain(
+        (
+            description_score,
+            news_score,
+            cxn_name_score,
+            funding_multiplier,
+            num_cxn_multiplier,
+            tier1_news,
+            tier2_news,
+            tier3_news,
+            tier4_news,
+            tier5_news,
+            tier6_news,
+            tier7_news,
+            tier8_news,
+            tier9_news,
+            tier10_news,
+            article_count_multiplier,
+            name_url_score,
+            competitor_score,
+            investor_score,
+        ) = process_explain(
             detail,
             description_score,
             news_score,
@@ -325,7 +363,7 @@ def main():
             "(0.6 * tiered News tf_idf favoring upper tiers + description tf_idf + expert collection name flat + name or url flat + competitor flat + investor name flat) * ln(2 + total equity funding) * log(2 + number of expert collections)",
         ),
     ]
-    search_terms = BIG_TESTING_ROUND_SEARCH_TERMS
+    search_terms = BIG_TESTING_ROUND_SEARCH_TERMS[:3]
     wb = Workbook()
     ws = wb.get_active_sheet()
     i = 1
