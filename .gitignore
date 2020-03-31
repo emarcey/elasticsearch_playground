@@ -1,2 +1,5 @@
 __pycache__/
 tables/*
+
+stemming_results/
+rnmi_results/
